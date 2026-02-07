@@ -1,0 +1,19 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.log
+*.tmp
+
+# Node modules (si usas npm)
+node_modules/
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos de sistema Windows
+desktop.ini
