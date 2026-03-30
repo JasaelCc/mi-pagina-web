@@ -145,6 +145,9 @@ const translations = {
         'form-email': 'Email',
         'form-message': 'Mensaje',
         'form-submit': 'Enviar Mensaje',
+        'form-sending': 'Enviando...',
+        'form-success': '¡Mensaje enviado con éxito! Me pondré en contacto contigo pronto.',
+        'form-error': 'Hubo un problema al enviar tu mensaje. Por favor, inténtalo de nuevo.',
         'footer-rights': 'Todos los derechos reservados.'
     },
     'en': {
@@ -202,6 +205,9 @@ const translations = {
         'form-email': 'Email',
         'form-message': 'Message',
         'form-submit': 'Send Message',
+        'form-sending': 'Sending...',
+        'form-success': 'Message sent successfully! I will get back to you shortly.',
+        'form-error': 'There was a problem sending your message. Please try again.',
         'footer-rights': 'All rights reserved.'
     }
 };
@@ -321,15 +327,51 @@ if (mobileMenuBtn && navLinksContainer) {
 // ============================================
 
 const contactForm = document.getElementById('contact-form');
+const formStatus = document.getElementById('form-status');
 
-if (contactForm) {
+if (contactForm && formStatus) {
     contactForm.addEventListener('submit', async (e) => {
-        // We let the form submit normally if we want Formspree's default redirect,
-        // or we can handle it with AJAX for a better UX.
-        // For now, we'll let it be a standard submission but we could add a loading state.
+        e.preventDefault();
+
         const submitBtn = contactForm.querySelector('.submit-btn');
+        const originalBtnText = translations[currentLang]['form-submit'];
+
+        // Loading state
         submitBtn.disabled = true;
-        submitBtn.textContent = currentLang === 'es' ? 'Enviando...' : 'Sending...';
+        submitBtn.textContent = translations[currentLang]['form-sending'];
+        formStatus.style.display = 'none';
+        formStatus.className = 'form-status';
+
+        try {
+            const formData = new FormData(contactForm);
+            const response = await fetch(contactForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Success
+                formStatus.textContent = translations[currentLang]['form-success'];
+                formStatus.classList.add('success');
+                contactForm.reset();
+            } else {
+                // Server error
+                const data = await response.json();
+                formStatus.textContent = data.errors ? data.errors.map(error => error.message).join(", ") : translations[currentLang]['form-error'];
+                formStatus.classList.add('error');
+            }
+        } catch (error) {
+            // Network error
+            formStatus.textContent = translations[currentLang]['form-error'];
+            formStatus.classList.add('error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            formStatus.style.display = 'block';
+        }
     });
 }
 
