@@ -324,12 +324,51 @@ const contactForm = document.getElementById('contact-form');
 
 if (contactForm) {
     contactForm.addEventListener('submit', async (e) => {
-        // We let the form submit normally if we want Formspree's default redirect,
-        // or we can handle it with AJAX for a better UX.
-        // For now, we'll let it be a standard submission but we could add a loading state.
+        e.preventDefault();
+
         const submitBtn = contactForm.querySelector('.submit-btn');
+        const originalText = submitBtn.textContent;
+        const formData = new FormData(contactForm);
+
         submitBtn.disabled = true;
         submitBtn.textContent = currentLang === 'es' ? 'Enviando...' : 'Sending...';
+
+        try {
+            const response = await fetch(contactForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                submitBtn.textContent = currentLang === 'es' ? '¡Mensaje Enviado!' : 'Message Sent!';
+                submitBtn.style.backgroundColor = '#48bb78'; // success green
+                contactForm.reset();
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    submitBtn.style.backgroundColor = '';
+                }, 5000);
+            } else {
+                const data = await response.json();
+                if (Object.hasOwn(data, 'errors')) {
+                    throw new Error(data["errors"].map(error => error["message"]).join(", "));
+                } else {
+                    throw new Error("Oops! There was a problem submitting your form");
+                }
+            }
+        } catch (error) {
+            console.error('Form error:', error);
+            submitBtn.textContent = currentLang === 'es' ? 'Error al enviar' : 'Error sending';
+            submitBtn.style.backgroundColor = '#f56565'; // error red
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                submitBtn.style.backgroundColor = '';
+            }, 5000);
+        }
     });
 }
 
